@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "build": "mkdir -p dist && cp -r src dist/src && cp package.json dist/package.json"
   },
   "dependencies": {
     "express": "^4.21.2"
