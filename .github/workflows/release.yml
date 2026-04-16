@@ -1,0 +1,60 @@
+name: Fullstack Release
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install backend deps
+        working-directory: backend
+        run: npm install
+
+      - name: Test and build backend
+        working-directory: backend
+        run: |
+          npm test
+          npm run build
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Package artifacts
+        run: |
+          mkdir -p artifacts
+          tar -czf artifacts/backend-dist.tar.gz -C backend dist
+          tar -czf artifacts/frontend-dist.tar.gz -C frontend dist
+
+      - name: Generate release tag
+        id: tag
+        run: echo "value=v1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release with artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag.outputs.value }}
+          name: Fullstack Release ${{ steps.tag.outputs.value }}
+          body: Automated release from workflow run #${{ github.run_number }}
+          artifacts: "artifacts/backend-dist.tar.gz,artifacts/frontend-dist.tar.gz"
+          artifactErrorsFailBuild: true
+          token: ${{ secrets.GITHUB_TOKEN }}
